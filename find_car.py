@@ -1,0 +1,35 @@
+from collections import deque
+import numpy as np
+import imutils
+import cv2  
+import time
+def color_car(center_car):
+    #设定红色阈值，HSV空间
+    blueLower = np.array([100, 100, 160])
+    blueUpper = np.array([105, 165, 200])
+    #读取图片
+    frame = cv2.imread('image.jpg')
+    #转到HSV空间
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    #根据阈值构建掩膜
+    mask = cv2.inRange(hsv, blueLower, blueUpper)
+    #腐蚀操作
+    mask = cv2.erode(mask, None, iterations=2)
+    #膨胀操作，其实先腐蚀再膨胀的效果是开运算，去除噪点
+    mask = cv2.dilate(mask, None, iterations=2)
+    #轮廓检测
+    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+    #初始化瓶盖圆形轮廓质心
+    center = None
+    #如果存在轮廓
+    if len(cnts) > 0:
+        #找到面积最大的轮廓
+        c = max(cnts, key = cv2.contourArea)
+        #确定面积最大的轮廓的外接圆
+        ((x, y), radius) = cv2.minEnclosingCircle(c)
+        #计算轮廓的矩
+        M = cv2.moments(c)
+        #计算质心
+        center = (int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
+        center_car.append(center)
+
